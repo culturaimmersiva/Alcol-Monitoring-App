@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>App Monitoraggio Alcol</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Responsive design -->
+    <style>
+        /* Styles CSS */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        nav {
+            background-color: #333;
+            overflow: hidden;
+            display: none; /* Nascosto fino al login */
+        }
+        
+        nav ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-wrap: wrap; /* Per adattarsi su schermi piccoli */
+        }
+        
+        nav li {
+            flex: 1 1 auto;
+            text-align: center;
+        }
+        
+        nav li a {
+            display: block;
+            color: white;
+            padding: 14px 16px;
+            text-decoration: none;
+        }
+        
+        nav li a:hover {
+            background-color: #575757;
+        }
+        
+        main {
+            padding: 20px;
+        }
+        
+        section {
+            margin-bottom: 40px;
+        }
+        
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            position: relative;
+            bottom: 0;
+            width: 100%;
+        }
+        
+        /* Stili per il login */
+        #login {
+            max-width: 300px;
+            margin: 100px auto;
+            text-align: center;
+        }
+        
+        #login input {
+            padding: 10px;
+            margin: 5px 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        #login button {
+            padding: 10px 20px;
+            margin: 5px 0;
+            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+        
+        /* Form per registrare il consumo */
+        #record-consumption input, #record-consumption button {
+            padding: 10px;
+            margin: 5px 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        #record-consumption button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+        
+        /* Tabelle per le statistiche */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: center;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+        }
+        
+        /* Responsive adjustments */
+        @media screen and (max-width: 600px) {
+            nav ul {
+                flex-direction: column;
+            }
+            
+            header, footer {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>App Monitoraggio Alcol</h1>
+    </header>
+    <nav>
+        <ul>
+            <li><a href="#" id="nav-home">Home</a></li>
+            <li><a href="#" id="nav-record">Registra Consumo</a></li>
+            <li><a href="#" id="nav-stats">Statistiche</a></li>
+            <li><a href="#" id="nav-goals">Obiettivi</a></li>
+            <li><a href="#" id="nav-logout">Logout</a></li>
+        </ul>
+    </nav>
+    <main>
+        <!-- Sezione di login -->
+        <section id="login">
+            <h2>Accedi</h2>
+            <input type="text" id="username" placeholder="Nome utente">
+            <input type="password" id="password" placeholder="Password">
+            <button id="login-button">Login</button>
+        </section>
+        
+        <!-- Sezioni dell'app -->
+        <section id="home-section" style="display:none;">
+            <h2>Benvenuto, <span id="user-name"></span>!</h2>
+            <p>Utilizza il menu per navigare nell'applicazione.</p>
+        </section>
+        
+        <section id="record-section" style="display:none;">
+            <h2>Registra il tuo Consumo</h2>
+            <form id="record-consumption">
+                <input type="number" id="consumption-amount" placeholder="Quantità (unità di alcol)" min="0">
+                <input type="date" id="consumption-date">
+                <button type="button" id="record-button">Registra</button>
+            </form>
+        </section>
+        
+        <section id="stats-section" style="display:none;">
+            <h2>Statistiche</h2>
+            <h3>Ultimi 7 Giorni</h3>
+            <canvas id="weekly-chart" width="400" height="200"></canvas>
+            <h3>Ultimi 30 Giorni</h3>
+            <canvas id="monthly-chart" width="400" height="200"></canvas>
+        </section>
+        
+        <section id="goals-section" style="display:none;">
+            <h2>I tuoi Obiettivi</h2>
+            <form id="set-goal">
+                <input type="number" id="goal-amount" placeholder="Obiettivo settimanale (unità)" min="0">
+                <button type="button" id="set-goal-button">Imposta Obiettivo</button>
+            </form>
+            <p id="current-goal"></p>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2024 App Monitoraggio Alcol</p>
+    </footer>
+
+    <script>
+        // JavaScript per gestire le funzionalità dell'app
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginSection = document.getElementById('login');
+            const nav = document.querySelector('nav');
+            const homeSection = document.getElementById('home-section');
+            const recordSection = document.getElementById('record-section');
+            const statsSection = document.getElementById('stats-section');
+            const goalsSection = document.getElementById('goals-section');
+            const navHome = document.getElementById('nav-home');
+            const navRecord = document.getElementById('nav-record');
+            const navStats = document.getElementById('nav-stats');
+            const navGoals = document.getElementById('nav-goals');
+            const navLogout = document.getElementById('nav-logout');
+            const userNameSpan = document.getElementById('user-name');
+            const currentGoalP = document.getElementById('current-goal');
+
+            let userData = {
+                username: '',
+                consumption: [],
+                goal: null
+            };
+
+            // Funzione per mostrare la sezione corretta
+            function showSection(section) {
+                homeSection.style.display = 'none';
+                recordSection.style.display = 'none';
+                statsSection.style.display = 'none';
+                goalsSection.style.display = 'none';
+
+                section.style.display = 'block';
+            }
+
+            // Event listener per il login
+            document.getElementById('login-button').addEventListener('click', () => {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+
+                if (username && password) {
+                    userData.username = username;
+                    userNameSpan.textContent = username;
+                    loginSection.style.display = 'none';
+                    nav.style.display = 'block';
+                    showSection(homeSection);
+                } else {
+                    alert('Per favore, inserisci nome utente e password.');
+                }
+            });
+
+            // Event listener per il logout
+            navLogout.addEventListener('click', () => {
+                userData = {
+                    username: '',
+                    consumption: [],
+                    goal: null
+                };
+                loginSection.style.display = 'block';
+                nav.style.display = 'none';
+                homeSection.style.display = 'none';
+                recordSection.style.display = 'none';
+                statsSection.style.display = 'none';
+                goalsSection.style.display = 'none';
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+            });
+
+            // Navigazione
+            navHome.addEventListener('click', () => {
+                showSection(homeSection);
+            });
+
+            navRecord.addEventListener('click', () => {
+                showSection(recordSection);
+            });
+
+            navStats.addEventListener('click', () => {
+                showSection(statsSection);
+                renderCharts();
+            });
+
+            navGoals.addEventListener('click', () => {
+                showSection(goalsSection);
+                if (userData.goal !== null) {
+                    currentGoalP.textContent = 'Il tuo obiettivo settimanale è: ' + userData.goal + ' unità';
+                } else {
+                    currentGoalP.textContent = 'Non hai impostato un obiettivo settimanale.';
+                }
+            });
+
+            // Registrazione del consumo
+            document.getElementById('record-button').addEventListener('click', () => {
+                const amount = parseInt(document.getElementById('consumption-amount').value);
+                const date = document.getElementById('consumption-date').value;
+
+                if (!isNaN(amount) && date) {
+                    userData.consumption.push({ amount, date });
+                    document.getElementById('consumption-amount').value = '';
+                    document.getElementById('consumption-date').value = '';
+                    alert('Consumo registrato con successo!');
+                } else {
+                    alert('Per favore, inserisci tutti i dati.');
+                }
+            });
+
+            // Impostazione dell'obiettivo
+            document.getElementById('set-goal-button').addEventListener('click', () => {
+                const goalAmount = parseInt(document.getElementById('goal-amount').value);
+
+                if (!isNaN(goalAmount)) {
+                    userData.goal = goalAmount;
+                    currentGoalP.textContent = 'Il tuo obiettivo settimanale è: ' + userData.goal + ' unità';
+                    document.getElementById('goal-amount').value = '';
+                    alert('Obiettivo impostato con successo!');
+                } else {
+                    alert('Per favore, inserisci un valore valido.');
+                }
+            });
+
+            // Funzione per renderizzare i grafici delle statistiche
+            function renderCharts() {
+                // Simulazione semplice senza utilizzare librerie esterne
+                const weeklyCanvas = document.getElementById('weekly-chart');
+                const monthlyCanvas = document.getElementById('monthly-chart');
+
+                // Cancella il contenuto precedente
+                weeklyCanvas.getContext('2d').clearRect(0, 0, weeklyCanvas.width, weeklyCanvas.height);
+                monthlyCanvas.getContext('2d').clearRect(0, 0, monthlyCanvas.width, monthlyCanvas.height);
+
+                // Qui potresti integrare una libreria come Chart.js per visualizzare i dati reali
+                const ctxWeekly = weeklyCanvas.getContext('2d');
+                ctxWeekly.fillText('Grafico settimanale non disponibile in questa demo.', 10, 50);
+
+                const ctxMonthly = monthlyCanvas.getContext('2d');
+                ctxMonthly.fillText('Grafico mensile non disponibile in questa demo.', 10, 50);
+            }
+        });
+    </script>
+</body>
+</html>
